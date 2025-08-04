@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <title>ফাইল আপলোডার এবং লিংক জেনারেটর</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f111a;
+      color: #f5f7fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      gap: 20px;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #1f2435;
+      padding: 20px 25px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 500px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 1.8rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    input[type=file] {
+      width: 100%;
+      padding: 6px;
+    }
+    button {
+      background: #6366f1;
+      border: none;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .link-box {
+      background: #0f111a;
+      padding: 12px;
+      border: 1px solid #444a7a;
+      border-radius: 8px;
+      word-break: break-word;
+    }
+    .small {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .success {
+      color: #7ee787;
+    }
+    .error {
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ফাইল আপলোড এবং লিংক জেনারেটর</h1>
+    <div class="small">ফাইল সিলেক্ট করো এবং “আপলোড করো” চাপো।</div>
+
+    <label for="fileInput">আপলোড ফাইল</label>
+    <input type="file" id="fileInput" accept="*/*" />
+
+    <button id="uploadBtn">আপলোড করো</button>
+
+    <div id="status" class="small"></div>
+    <div id="result" style="margin-top:15px;"></div>
+  </div>
+
+  <script type="module">
+    // Firebase Config এখানে বসাও
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-storage.js";
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const statusDiv = document.getElementById("status");
+    const resultDiv = document.getElementById("result");
+
+    uploadBtn.addEventListener("click", async () => {
+      resultDiv.innerHTML = "";
+      statusDiv.textContent = "";
+      const file = fileInput.files[0];
+      if (!file) {
+        statusDiv.textContent = "দয়া করে একটি ফাইল সিলেক্ট করুন।";
+        statusDiv.className = "error";
+        return;
+      }
+      statusDiv.textContent = "আপলোড হচ্ছে...";
+      statusDiv.className = "";
+      try {
+        const filePath = `uploads/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, filePath);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        resultDiv.innerHTML = `
+          <div class="link-box">
+            <strong>শেয়ারযোগ্য লিংক:</strong><br/>
+            <a href="${downloadURL}" target="_blank" style="color:#a3d1ff;">${downloadURL}</a>
+          </div>
+          <div class="small">এই লিংক যেকোনো ব্রাউজারে খুলে ফাইলটি ডাউনলোড বা দেখা যাবে।</div>
+        `;
+        statusDiv.textContent = "সফলভাবে আপলোড হয়েছে।";
+        statusDiv.className = "success";
+      } catch (error) {
+        statusDiv.textContent = "আপলোডে সমস্যা হয়েছে: " + error.message;
+        statusDiv.className = "error";
+      }
+    });
+  </script>
+</body>
+</html>
